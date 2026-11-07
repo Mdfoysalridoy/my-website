@@ -1,0 +1,585 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>90-Day Success Tracker</title>
+<style>
+:root {
+  --bg:#f4f6fb; --panel:#fff; --text:#182238;
+  --muted:#718096; --blue:#4969e8; --border:#e5e9f2;
+  --green:#159b70; --red:#df6262;
+}
+* { box-sizing:border-box; }
+body {
+  margin:0; font-family:Inter,Arial,sans-serif;
+  background:var(--bg); color:var(--text);
+}
+header {
+  background:#17264a; color:white; padding:22px 5%;
+}
+header h1 { margin:0 0 6px; font-size:24px; }
+header p { margin:0; color:#c5d1ee; }
+.layout { display:flex; min-height:calc(100vh - 85px); }
+nav {
+  width:220px; background:white; padding:18px 12px;
+  border-right:1px solid var(--border);
+}
+nav button {
+  display:block; width:100%; text-align:left;
+  background:none; border:0; padding:13px;
+  margin:3px 0; border-radius:8px; cursor:pointer;
+  color:var(--text); font-size:14px;
+}
+nav button.active, nav button:hover {
+  background:#edf1ff; color:var(--blue); font-weight:bold;
+}
+main { flex:1; padding:28px; max-width:1200px; }
+.page { display:none; }
+.page.active { display:block; }
+h2 { margin-top:0; }
+.muted { color:var(--muted); }
+.cards {
+  display:grid; grid-template-columns:repeat(auto-fit,minmax(170px,1fr));
+  gap:15px; margin:20px 0;
+}
+.card {
+  background:var(--panel); padding:20px; border-radius:12px;
+  border:1px solid var(--border);
+}
+.card small { color:var(--muted); }
+.big { font-size:29px; font-weight:750; margin-top:10px; }
+.progress {
+  height:9px; background:#e9edf5; border-radius:20px;
+  overflow:hidden; margin-top:12px;
+}
+.progress span {
+  display:block; height:100%; background:var(--blue);
+  width:0; transition:width .2s;
+}
+.panel {
+  background:white; border:1px solid var(--border);
+  padding:20px; border-radius:12px; margin:16px 0;
+}
+table { width:100%; border-collapse:collapse; }
+th,td {
+  text-align:left; padding:12px 9px;
+  border-bottom:1px solid var(--border); font-size:14px;
+}
+th { color:var(--muted); }
+input,select,textarea {
+  padding:9px; border:1px solid var(--border);
+  border-radius:7px; background:white; max-width:100%;
+}
+input[type=number] { width:80px; }
+input[type=date] { width:145px; }
+button.action {
+  border:0; background:var(--blue); color:white;
+  padding:10px 15px; border-radius:7px;
+  cursor:pointer; margin:4px 3px 4px 0;
+}
+button.secondary { background:#e9edff; color:var(--blue); }
+button.danger { background:#fff0f0; color:var(--red); }
+.task {
+  display:flex; align-items:center; gap:12px;
+  padding:12px 0; border-bottom:1px solid var(--border);
+}
+.task label { flex:1; }
+.task.done label { text-decoration:line-through; color:var(--muted); }
+.task select { width:125px; }
+input[type=checkbox] { width:18px; height:18px; }
+.row {
+  display:flex; flex-wrap:wrap; align-items:center;
+  gap:10px; margin:12px 0;
+}
+.badge {
+  padding:5px 9px; background:#edf1ff;
+  color:var(--blue); border-radius:20px; font-size:12px;
+}
+.notice { color:var(--green); font-size:13px; }
+@media(max-width:700px) {
+  .layout { display:block; }
+  nav { width:100%; display:flex; overflow:auto; border-right:0; }
+  nav button { min-width:max-content; }
+  main { padding:16px; }
+  table { min-width:650px; }
+  .panel { overflow-x:auto; }
+}
+</style>
+</head>
+<body>
+
+<header>
+  <h1>90-Day Success Tracker</h1>
+  <p>IELTS Band 8 · LLM Cybersecurity · Research Publication</p>
+</header>
+
+<div class="layout">
+<nav id="nav">
+  <button class="active" data-page="dashboard">📊 Dashboard</button>
+  <button data-page="daily">✅ Daily Checklist</button>
+  <button data-page="ielts">🎓 IELTS Tracker</button>
+  <button data-page="project">💻 LLM Project</button>
+  <button data-page="paper">📄 Research Paper</button>
+  <button data-page="weekly">📅 Weekly Roadmap</button>
+  <button data-page="routine">⏰ Daily Routine</button>
+  <button data-page="backup">💾 Backup & Settings</button>
+</nav>
+
+<main>
+
+<section id="dashboard" class="page active">
+  <h2>Dashboard</h2>
+  <p class="muted">Your personal 90-day progress overview.</p>
+  <div class="cards">
+    <div class="card"><small>Days elapsed</small><div class="big" id="elapsed">0</div></div>
+    <div class="card"><small>Tasks completed</small><div class="big" id="completed">0</div></div>
+    <div class="card"><small>Overall progress</small><div class="big" id="overall">0%</div><div class="progress"><span id="overallbar"></span></div></div>
+    <div class="card"><small>Tasks remaining</small><div class="big" id="remaining">0</div></div>
+  </div>
+  <div class="panel">
+    <h3>Goal progress</h3>
+    <div id="goalProgress"></div>
+  </div>
+  <div class="panel">
+    <h3>90-day period</h3>
+    <div class="row">
+      <label>Start date <input type="date" id="startDate"></label>
+      <button class="action" onclick="changeStart()">Update plan</button>
+    </div>
+    <p class="muted" id="period"></p>
+  </div>
+</section>
+
+<section id="daily" class="page">
+  <h2>Daily Checklist</h2>
+  <div class="row">
+    <label>Select date <input type="date" id="selectedDate"></label>
+    <button class="action" onclick="showDaily()">Load day</button>
+  </div>
+  <div class="panel">
+    <div class="row">
+      <strong id="dayHeading">Today's tasks</strong>
+      <span class="badge" id="dayType"></span>
+    </div>
+    <div id="dailyTasks"></div>
+    <div class="row">
+      <input id="newTask" placeholder="Add your own task">
+      <select id="newCategory">
+        <option>IELTS</option><option>LLM Project</option>
+        <option>Research Paper</option><option>University</option>
+        <option>Personal</option>
+      </select>
+      <button class="action" onclick="addTask()">Add task</button>
+    </div>
+  </div>
+</section>
+
+<section id="ielts" class="page">
+  <h2>IELTS Tracker</h2>
+  <div class="cards">
+    <div class="card"><small>Target overall band</small><div class="big">8.0</div></div>
+    <div class="card"><small>Mock tests recorded</small><div class="big" id="mockCount">0</div></div>
+    <div class="card"><small>Latest overall band</small><div class="big" id="latestBand">—</div></div>
+  </div>
+  <div class="panel">
+    <h3>Record a practice or mock test</h3>
+    <div class="row">
+      <input type="date" id="testDate">
+      <select id="testType"><option>Full Mock</option><option>Listening</option><option>Reading</option><option>Writing</option><option>Speaking</option></select>
+    </div>
+    <div class="row">
+      <label>L <input type="number" id="L" min="0" max="9" step=".5"></label>
+      <label>R <input type="number" id="R" min="0" max="9" step=".5"></label>
+      <label>W <input type="number" id="W" min="0" max="9" step=".5"></label>
+      <label>S <input type="number" id="S" min="0" max="9" step=".5"></label>
+      <button class="action" onclick="addTest()">Save score</button>
+    </div>
+  </div>
+  <div class="panel">
+    <h3>Score history</h3>
+    <table><thead><tr><th>Date</th><th>Type</th><th>L</th><th>R</th><th>W</th><th>S</th><th>Average</th><th></th></tr></thead><tbody id="scoreRows"></tbody></table>
+  </div>
+</section>
+
+<section id="project" class="page">
+  <h2>LLM Cybersecurity Project</h2>
+  <p class="muted">Build an LLM-based threat detection and analysis framework.</p>
+  <div class="panel"><div id="projectTasks"></div></div>
+</section>
+
+<section id="paper" class="page">
+  <h2>Research Paper Tracker</h2>
+  <p class="muted">From research gap to manuscript submission.</p>
+  <div class="panel"><div id="paperTasks"></div></div>
+</section>
+
+<section id="weekly" class="page">
+  <h2>13-Week Roadmap</h2>
+  <div class="panel"><div id="weeks"></div></div>
+</section>
+
+<section id="routine" class="page">
+  <h2>Daily Routine</h2>
+  <div class="panel">
+    <h3>University days: Saturday, Monday, Thursday</h3>
+    <table>
+      <tr><th>Time</th><th>Activity</th></tr>
+      <tr><td>Morning</td><td>IELTS practice – 1 hour</td></tr>
+      <tr><td>Daytime</td><td>University classes and assignments</td></tr>
+      <tr><td>Evening</td><td>IELTS Speaking or Writing</td></tr>
+      <tr><td>Night</td><td>Research or project review</td></tr>
+    </table>
+  </div>
+  <div class="panel">
+    <h3>Deep-work days: Sunday, Tuesday, Wednesday</h3>
+    <table>
+      <tr><th>Time</th><th>Activity</th></tr>
+      <tr><td>06:30</td><td>Wake up</td></tr>
+      <tr><td>07:00–09:00</td><td>IELTS Reading, Listening and Speaking</td></tr>
+      <tr><td>09:00–11:00</td><td>LLM cybersecurity development</td></tr>
+      <tr><td>11:30–13:00</td><td>Research paper writing</td></tr>
+      <tr><td>14:00–15:30</td><td>IELTS Writing</td></tr>
+      <tr><td>16:00–17:30</td><td>Project experiments and coding</td></tr>
+      <tr><td>20:30–21:30</td><td>Research reading and review</td></tr>
+      <tr><td>22:30</td><td>Sleep</td></tr>
+    </table>
+  </div>
+  <div class="panel">
+    <h3>Friday: Review day</h3>
+    <p>Morning: Full IELTS mock and error analysis.</p>
+    <p>Evening: Project review, paper revision and next-week planning.</p>
+  </div>
+</section>
+
+<section id="backup" class="page">
+  <h2>Backup & Settings</h2>
+  <div class="panel">
+    <h3>Your information</h3>
+    <p class="muted">Download a backup regularly. Import it to restore your progress.</p>
+    <button class="action" onclick="exportData()">Download backup</button>
+    <label class="action secondary" style="display:inline-block">
+      Restore backup <input type="file" id="importFile" accept=".json" hidden onchange="importData(event)">
+    </label>
+    <p id="backupMessage" class="notice"></p>
+  </div>
+  <div class="panel">
+    <h3>Reset app</h3>
+    <p>Reset all saved progress and return to the initial checklist.</p>
+    <button class="action danger" onclick="resetApp()">Reset everything</button>
+  </div>
+</section>
+
+</main>
+</div>
+
+<script>
+const KEY = "successTracker90_v1";
+const defaultProject = [
+"Define project title, objectives and scope",
+"Identify cybersecurity problem and research gap",
+"Review existing LLM cybersecurity research",
+"Select cybersecurity dataset",
+"Select LLM and development tools",
+"Design system architecture",
+"Prepare and clean security logs",
+"Develop initial prototype",
+"Integrate LLM into the prototype",
+"Implement suspicious event classification",
+"Generate threat explanations",
+"Generate defensive recommendations",
+"Run experiments",
+"Evaluate precision, recall and F1-score",
+"Analyze false positives and limitations",
+"Improve and test the system",
+"Prepare documentation and project demo"
+];
+const defaultPaper = [
+"Choose research topic",
+"Identify research gap",
+"Define research questions",
+"Collect and organize research papers",
+"Complete literature review",
+"Define methodology",
+"Prepare dataset",
+"Conduct experiments",
+"Analyze results",
+"Write introduction",
+"Write related work",
+"Write methodology section",
+"Write results and discussion",
+"Prepare conclusion and future work",
+"Format references and citations",
+"Select suitable publication venue",
+"Proofread and revise manuscript",
+"Submit manuscript"
+];
+const weeks = [
+["IELTS diagnostic test","Select project topic","Identify research gap"],
+["Start IELTS classes","Define project objectives","Read 5 research papers"],
+["Improve Reading and Listening","Select dataset and tools","Literature review draft"],
+["IELTS Writing practice","Design methodology and architecture","Problem statement"],
+["IELTS Speaking practice","Build prototype","Methodology draft"],
+["Timed IELTS practice","Integrate LLM","Prepare experiments"],
+["Mock test review","Test threat classification","Record results"],
+["Improve weak modules","Improve prototype","Write results"],
+["Full IELTS mock","Evaluate precision, recall and F1","Analyze findings"],
+["Writing and Speaking","Test reliability","Write introduction"],
+["IELTS practice","Complete documentation","Complete manuscript draft"],
+["Mock tests","Prepare project demo","Edit paper and shortlist venue"],
+["Final IELTS review","Finalize project","Submit paper if ready"]
+];
+
+function loadState() {
+  try {
+    const saved = localStorage.getItem(KEY);
+    return saved ? JSON.parse(saved) : null;
+  } catch(e) { return null; }
+}
+function initialState() {
+  return {
+    start:"2026-11-08", tasks:{}, custom:[],
+    project:defaultProject.map(x=>({name:x,done:false})),
+    paper:defaultPaper.map(x=>({name:x,done:false})),
+    scores:[], weekly:weeks.map(x=>({goals:x,done:false}))
+  };
+}
+let state = loadState() || initialState();
+
+function save() {
+  localStorage.setItem(KEY,JSON.stringify(state));
+  renderDashboard();
+}
+function dateString(d) {
+  return [d.getFullYear(),String(d.getMonth()+1).padStart(2,"0"),String(d.getDate()).padStart(2,"0")].join("-");
+}
+function parseDate(s) {
+  const [y,m,d]=s.split("-").map(Number);
+  return new Date(y,m-1,d);
+}
+function dateRange() {
+  const start=parseDate(state.start);
+  const end=new Date(start);
+  end.setDate(end.getDate()+89);
+  return {start,end};
+}
+function dayType(d) {
+  const day=d.getDay();
+  if([6,1,4].includes(day)) return "University Day";
+  if(day===5) return "Friday Review";
+  return "Deep Work Day";
+}
+function defaultTasks(d) {
+  const type=dayType(d);
+  if(type==="University Day") return [
+    ["IELTS Listening or Reading practice","IELTS"],
+    ["University classes and assignments","University"],
+    ["IELTS Speaking or Writing practice","IELTS"],
+    ["Research reading or project review","Research Paper"]
+  ];
+  if(type==="Friday Review") return [
+    ["Complete IELTS mock test","IELTS"],
+    ["Analyze IELTS mistakes","IELTS"],
+    ["Work on LLM project","LLM Project"],
+    ["Review research paper and plan next week","Research Paper"]
+  ];
+  return [
+    ["IELTS Reading practice","IELTS"],
+    ["IELTS Listening practice","IELTS"],
+    ["LLM cybersecurity development","LLM Project"],
+    ["Research paper writing or experiments","Research Paper"],
+    ["IELTS Writing or Speaking practice","IELTS"],
+    ["Review mistakes and vocabulary","IELTS"]
+  ];
+}
+function dayTasks(date) {
+  const key=dateString(date);
+  if(!state.tasks[key]) {
+    state.tasks[key]=defaultTasks(date).map(x=>({name:x[0],category:x[1],done:false}));
+  }
+  return state.tasks[key];
+}
+function allTasks() {
+  const {start}=dateRange();
+  let list=[];
+  for(let i=0;i<90;i++) {
+    let d=new Date(start); d.setDate(d.getDate()+i);
+    list.push(...dayTasks(d));
+  }
+  Object.values(state.tasks).forEach(arr=>{});
+  list.push(...state.custom);
+  return list;
+}
+function renderDashboard() {
+  const {start,end}=dateRange();
+  const now=new Date(); now.setHours(0,0,0,0);
+  const elapsed=Math.max(0,Math.min(90,Math.floor((now-start)/86400000)+1));
+  const tasks=allTasks();
+  const done=tasks.filter(x=>x.done).length;
+  const percent=tasks.length?Math.round(done/tasks.length*100):0;
+  document.getElementById("elapsed").textContent=elapsed+"/90";
+  document.getElementById("completed").textContent=done;
+  document.getElementById("remaining").textContent=tasks.length-done;
+  document.getElementById("overall").textContent=percent+"%";
+  document.getElementById("overallbar").style.width=percent+"%";
+  document.getElementById("period").textContent=state.start+" to "+dateString(end);
+  document.getElementById("startDate").value=state.start;
+  const groups=["IELTS","LLM Project","Research Paper"];
+  document.getElementById("goalProgress").innerHTML=groups.map(g=>{
+    const items=tasks.filter(t=>t.category===g);
+    const count=items.filter(t=>t.done).length;
+    const p=items.length?Math.round(count/items.length*100):0;
+    return `<p><b>${g}</b> — ${count}/${items.length} (${p}%)</p><div class="progress"><span style="width:${p}%"></span></div>`;
+  }).join("");
+}
+function changeStart() {
+  const val=document.getElementById("startDate").value;
+  if(!val) return;
+  if(!confirm("Changing the start date will change the calendar dates. Continue?")) return;
+  state.start=val; save(); showDaily(); renderWeeks();
+}
+function showDaily() {
+  const input=document.getElementById("selectedDate");
+  if(!input.value) input.value=dateString(new Date());
+  const d=parseDate(input.value);
+  const tasks=dayTasks(d);
+  document.getElementById("dayHeading").textContent=d.toDateString();
+  document.getElementById("dayType").textContent=dayType(d);
+  document.getElementById("dailyTasks").innerHTML=tasks.map((t,i)=>`
+    <div class="task ${t.done?"done":""}">
+      <input type="checkbox" ${t.done?"checked":""} onchange="toggleDaily('${input.value}',${i},this.checked)">
+      <label>${escapeHTML(t.name)} <small class="muted">(${escapeHTML(t.category)})</small></label>
+      <button class="action secondary" onclick="renameTask('${input.value}',${i})">Edit</button>
+      <button class="action danger" onclick="deleteTask('${input.value}',${i})">×</button>
+    </div>`).join("");
+  save();
+}
+function toggleDaily(date,i,value) {
+  dayTasks(parseDate(date))[i].done=value; showDaily();
+}
+function addTask() {
+  const name=document.getElementById("newTask").value.trim();
+  if(!name) return;
+  const date=document.getElementById("selectedDate").value || dateString(new Date());
+  dayTasks(parseDate(date)).push({name,category:document.getElementById("newCategory").value,done:false});
+  document.getElementById("newTask").value="";
+  showDaily();
+}
+function renameTask(date,i) {
+  const t=dayTasks(parseDate(date))[i];
+  const name=prompt("Edit task name:",t.name);
+  if(name && name.trim()) { t.name=name.trim(); showDaily(); }
+}
+function deleteTask(date,i) {
+  if(confirm("Delete this task?")) { dayTasks(parseDate(date)).splice(i,1); showDaily(); }
+}
+function renderMilestones(id,key) {
+  const items=state[key];
+  document.getElementById(id).innerHTML=items.map((t,i)=>`
+    <div class="task ${t.done?"done":""}">
+      <input type="checkbox" ${t.done?"checked":""} onchange="toggleMilestone('${key}',${i},this.checked)">
+      <label>${escapeHTML(t.name)}</label>
+      <button class="action secondary" onclick="editMilestone('${key}',${i})">Edit</button>
+    </div>`).join("");
+}
+function toggleMilestone(key,i,value) { state[key][i].done=value; save(); renderMilestonePages(); }
+function editMilestone(key,i) {
+  const n=prompt("Edit milestone:",state[key][i].name);
+  if(n && n.trim()) { state[key][i].name=n.trim(); save(); renderMilestonePages(); }
+}
+function renderMilestonePages() {
+  renderMilestones("projectTasks","project");
+  renderMilestones("paperTasks","paper");
+}
+function addTest() {
+  const ids=["L","R","W","S"];
+  const values=ids.map(id=>document.getElementById(id).value);
+  if(values.some(v=>v==="" || Number(v)<0 || Number(v)>9)) {
+    alert("Enter all four IELTS scores between 0 and 9."); return;
+  }
+  const nums=values.map(Number);
+  const average=Math.round(nums.reduce((a,b)=>a+b,0)/4*2)/2;
+  state.scores.push({
+    date:document.getElementById("testDate").value || dateString(new Date()),
+    type:document.getElementById("testType").value,
+    scores:nums, average
+  });
+  ids.forEach(id=>document.getElementById(id).value="");
+  renderScores(); save();
+}
+function renderScores() {
+  const sorted=[...state.scores].sort((a,b)=>b.date.localeCompare(a.date));
+  document.getElementById("mockCount").textContent=state.scores.length;
+  document.getElementById("latestBand").textContent=sorted.length?sorted[0].average.toFixed(1):"—";
+  document.getElementById("scoreRows").innerHTML=sorted.map(t=>{
+    const original=state.scores.indexOf(t);
+    return `<tr><td>${t.date}</td><td>${escapeHTML(t.type)}</td>
+    ${t.scores.map(s=>`<td>${s}</td>`).join("")}
+    <td>${t.average.toFixed(1)}</td>
+    <td><button class="action danger" onclick="deleteScore(${original})">Delete</button></td></tr>`;
+  }).join("");
+}
+function deleteScore(i) { state.scores.splice(i,1); renderScores(); save(); }
+function renderWeeks() {
+  const {start}=dateRange();
+  document.getElementById("weeks").innerHTML=state.weekly.map((w,i)=>{
+    const a=new Date(start); a.setDate(a.getDate()+i*7);
+    const b=new Date(a); b.setDate(b.getDate()+6);
+    return `<div class="panel">
+      <div class="row"><b>Week ${i+1}</b><span class="badge">${dateString(a)} – ${dateString(b)}</span>
+      <label><input type="checkbox" ${w.done?"checked":""} onchange="state.weekly[${i}].done=this.checked;save();renderWeeks()"> Complete</label></div>
+      <p><b>IELTS:</b> ${escapeHTML(w.goals[0])}</p>
+      <p><b>LLM:</b> ${escapeHTML(w.goals[1])}</p>
+      <p><b>Paper:</b> ${escapeHTML(w.goals[2])}</p>
+    </div>`;
+  }).join("");
+}
+function exportData() {
+  const blob=new Blob([JSON.stringify(state,null,2)],{type:"application/json"});
+  const a=document.createElement("a");
+  a.href=URL.createObjectURL(blob); a.download="90-day-tracker-backup.json"; a.click();
+  URL.revokeObjectURL(a.href);
+  document.getElementById("backupMessage").textContent="Backup downloaded.";
+}
+function importData(event) {
+  const file=event.target.files[0]; if(!file) return;
+  const reader=new FileReader();
+  reader.onload=()=>{
+    try {
+      const incoming=JSON.parse(reader.result);
+      if(!incoming.start || !incoming.project || !incoming.paper || !incoming.tasks) throw Error();
+      if(!confirm("Replace current tracker data with this backup?")) return;
+      state=incoming; save(); renderAll();
+      document.getElementById("backupMessage").textContent="Backup restored.";
+    } catch(e) { alert("Invalid tracker backup file."); }
+  };
+  reader.readAsText(file);
+}
+function resetApp() {
+  if(!confirm("This permanently clears your saved progress. Continue?")) return;
+  state=initialState(); save(); renderAll();
+}
+function escapeHTML(value) {
+  return String(value).replace(/[&<>"']/g,c=>({
+    "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"
+  })[c]);
+}
+function renderAll() {
+  renderDashboard(); showDaily(); renderScores();
+  renderMilestonePages(); renderWeeks();
+}
+document.getElementById("nav").addEventListener("click",e=>{
+  const button=e.target.closest("button[data-page]");
+  if(!button) return;
+  document.querySelectorAll("nav button").forEach(b=>b.classList.remove("active"));
+  button.classList.add("active");
+  document.querySelectorAll(".page").forEach(p=>p.classList.remove("active"));
+  document.getElementById(button.dataset.page).classList.add("active");
+});
+document.getElementById("selectedDate").value=dateString(new Date());
+document.getElementById("testDate").value=dateString(new Date());
+renderAll();
+</script>
+</body>
+</html>
